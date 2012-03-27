@@ -6,13 +6,12 @@ from django.core.cache import get_cache
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.template.context import RequestContext
-from django.utils.cache import patch_response_headers
 
-from .cache import add_allow_downstream_caching_headers, add_prevent_django_caching_headers, cached_data
-from .coffeeutils import coffee as compile_coffeescript
+from .cache import cached_data
 from .djangoutils.utils import do_relocation
 from .jinja import env, context_to_dict
 from .relocation import RelocationSerializer
+from .pyutils import smart_import
 
 buf_to_unicode = lambda buf: u''.join(buf)
 buf_to_str = lambda buf: str(''.join(buf))
@@ -23,6 +22,11 @@ def relocation_cache_get_or_set(key_prefix, data, func):
         if not ctx.found:
             ctx.response = func(data)
     return ctx.response
+
+def patch_cached_response(request, response):
+    func_name = getattr(settings, 'RELOCATION_CACHED_RESPONSE_PATCH', None)
+    if func_name:
+        return smart_import(func_name)(request, response)
 
 class CachedExternalHtmlRelocation(object):
     def __init__(self, template, cache=get_cache(CACHE_NAME)):
@@ -67,9 +71,8 @@ class CachedExternalHtmlRelocation(object):
             self.render(context_to_dict(RequestContext(request)))
             response_content = self.cache.get(self.get_key(section, data_hash))
         response = HttpResponse(response_content, mimetype=self.SECTION_RULES[section].get('mimetype', None))
-        add_allow_downstream_caching_headers(request, response)
-        add_prevent_django_caching_headers(request, response)
-        patch_response_headers(response, cache_timeout = settings.YYCACHE_TIMES.LONG_TERM)
+        patch_cached_response(request, response)
+
         return response
 
     def render(self, context):
@@ -101,6 +104,7 @@ def scss(template_name, main, sections):
         sections[section].append(scssed)
 
 def coffee(template_name, main, sections):
+    from .coffeeutils import coffee as compile_coffeescript
     if not all(section in sections for section in ('coffee', 'javascript')):
         return
 
