@@ -12,7 +12,7 @@ from .cache import add_allow_downstream_caching_headers, add_prevent_django_cach
 from .coffeeutils import coffee as compile_coffeescript
 from .djangoutils.utils import do_relocation
 from .jinja import env, context_to_dict
-from .relocation import RelocationSer
+from .relocation import RelocationSerializer
 
 buf_to_unicode = lambda buf: u''.join(buf)
 buf_to_str = lambda buf: str(''.join(buf))
@@ -50,7 +50,7 @@ class CachedExternalHtmlRelocation(object):
         return main, sections
 
     def do_relocation(self, rendered_template):
-        return u''.join(self.process(RelocationSer.deser(rendered_template))[0])
+        return u''.join(self.process(RelocationSerializer.deser(rendered_template))[0])
 
     def put_cache_data(self, section, data):
         data_hash = hashlib.md5(data).hexdigest()
