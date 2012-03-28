@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
+from django.template.base import add_to_builtins, RequestContext
 
 from ..utils import buf_to_unicode, load_function
 from relocation import perform_relocation
@@ -17,7 +18,6 @@ def default_load_template(template_name):
     return get_template(template_name)
 
 def default_get_context(request, template_name):
-    from django.template import RequestContext
     return RequestContext(request)
 
 get_context = load_settings_function('RELOCATION_GET_CONTEXT', default_get_context)
@@ -32,3 +32,5 @@ def externified_view(request, template_name, section):
     main, sections = perform_relocation(template_name, load_template(template_name).render(get_context(request, template_name)))
     return externified_response(template_name, section, buf_to_unicode(sections[section]))
 
+def relocation_add_to_builtins():
+    add_to_builtins('relocation.djangoutils.templatetags')

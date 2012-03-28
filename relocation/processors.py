@@ -6,7 +6,7 @@ from django.core.cache import DEFAULT_CACHE_ALIAS
 from django.core.urlresolvers import reverse
 
 from .cache import cached_data
-from .utils import buf_to_unicode, smart_import
+from .utils import buf_to_unicode
 
 CACHE_NAME=getattr(settings, 'RELOCATION_CACHE', DEFAULT_CACHE_ALIAS)
 def relocation_cache_get_or_set(key_prefix, data, func):
@@ -15,16 +15,11 @@ def relocation_cache_get_or_set(key_prefix, data, func):
             ctx.response = func(data)
     return ctx.response
 
-def patch_cached_response(request, response):
-    func_name = getattr(settings, 'RELOCATION_CACHED_RESPONSE_PATCH', None)
-    if func_name:
-        return smart_import(func_name)(request, response)
-
 def external_http_reference(destination_format, reverse_view):
     return lambda template_name, section_name, section_data: (
         destination_format % reverse(reverse_view, kwargs=dict(template_name=template_name, section=section_name)))
 
-EXTERNIFY_VIEW = getattr(settings, 'RELOCATION_EXTERNIFY_VIEW', None)
+EXTERNIFY_VIEW = getattr(settings, 'RELOCATION_EXTERNIFY_VIEW', 'externified_view')
 EXTERNIFY_SECTION_RULES = Bunch(
     javascript = Bunch(
         reference = external_http_reference(
