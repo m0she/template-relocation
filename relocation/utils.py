@@ -64,3 +64,9 @@ def smart_import(import_path):
 
     return reduce(lambda base,part: resolve_part(base, part), import_path.split('.'), None)
 
+def load_function(function_or_name):
+    if callable(function_or_name):
+        return function_or_name
+    else:
+        return smart_import(function_or_name)
+
