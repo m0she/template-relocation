@@ -2,7 +2,7 @@ from bunch import Bunch
 from collections import deque
 
 from .utils import SearchableStringStream
-from dtypes import mudeque
+from .dtypes import mudeque
 
 class RelocationError(Exception):
     pass

@@ -2,7 +2,7 @@ import hashlib, logging
 from bunch import Bunch
 
 from django.conf import settings
-from django.core.cache import get_cache
+from django.core.cache import cache as default_cache
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.template.context import RequestContext
@@ -10,11 +10,8 @@ from django.template.context import RequestContext
 from .cache import cached_data
 from .djangoutils.utils import do_relocation
 from .jinja import env, context_to_dict
-from .relocation import RelocationSerializer
-from .pyutils import smart_import
-
-buf_to_unicode = lambda buf: u''.join(buf)
-buf_to_str = lambda buf: str(''.join(buf))
+from .engine import RelocationSerializer
+from .utils import buf_to_unicode, smart_import
 
 CACHE_NAME='relocations'
 def relocation_cache_get_or_set(key_prefix, data, func):
@@ -29,9 +26,9 @@ def patch_cached_response(request, response):
         return smart_import(func_name)(request, response)
 
 class CachedExternalHtmlRelocation(object):
-    def __init__(self, template, cache=get_cache(CACHE_NAME)):
+    def __init__(self, template, cache=None):
         self.template = template
-        self.cache = cache
+        self.cache = cache or default_cache
 
     EMPTY_HASH = '18abebe'
     SECTION_RULES = Bunch(
@@ -54,7 +51,7 @@ class CachedExternalHtmlRelocation(object):
         return main, sections
 
     def do_relocation(self, rendered_template):
-        return u''.join(self.process(RelocationSerializer.deser(rendered_template))[0])
+        return buf_to_unicode(self.process(RelocationSerializer.deserialize(rendered_template))[0])
 
     def put_cache_data(self, section, data):
         data_hash = hashlib.md5(data).hexdigest()
@@ -83,8 +80,8 @@ class CachedExternalHtmlRelocation(object):
         return 'external_relocation_cache.%s.%s.%s' % (self.template, section, data_hash)
 
 
-def cached_external(template_name, main, sections):
-    instance = CachedExternalHtmlRelocation(template_name)
+def cached_external(template_name, main, sections, cache=None):
+    instance = CachedExternalHtmlRelocation(template_name, cache)
     return instance.process(main, sections)
 
 def setup_scss():
@@ -98,8 +95,7 @@ def scss(template_name, main, sections):
     for section in scss_sections:
         if section not in sections:
             continue
-        # scss.parser fails weirdly on unicode, so we use str (buf_to_str)
-        scssed = relocation_cache_get_or_set('scss', buf_to_str(sections[section]), lambda data: scss_compiler.compile(data))
+        scssed = relocation_cache_get_or_set('scss', buf_to_unicode(sections[section]), lambda data: scss_compiler.compile(data))
         sections[section].clear()
         sections[section].append(scssed)
 

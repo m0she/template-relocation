@@ -1,4 +1,7 @@
 import io
+from importlib import import_module
+
+buf_to_unicode = lambda buf: u''.join(buf)
 
 class SearchableStringStream(io.IOBase):
     def __init__(self, s=u''):
@@ -50,4 +53,14 @@ class SearchableStringStream(io.IOBase):
         got = self.read(len(expected))
         assert got == expected, 'Expected: "%s". Got: "%s".'%(expected, got)
 
+
+def smart_import(import_path):
+    def resolve_part(base, part):
+        if not base:
+            return import_module(part)
+        if hasattr(base, part):
+            return getattr(base, part)
+        return import_module('.'.join((base.__name__, part)))
+
+    return reduce(lambda base,part: resolve_part(base, part), import_path.split('.'), None)
 
