@@ -1,0 +1,18 @@
+<html>
+    <head>
+        {% block head %}
+        {% endblock %}
+        {% destination javascript %}
+        <script type="text/javascript">
+            {% destination raw_javascript %}
+        </script>
+        <style>
+            {% destination css %}
+        </style>
+    </head>
+    <body>
+        {% block body %}
+        {% endblock %}
+    </body>
+</html>
+

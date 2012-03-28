@@ -1,0 +1,15 @@
+{% extends "base.tmpl" %}
+
+{% block body %}
+    <div class="my_div">
+        Hello world!
+    </div>
+    {% include "included.tmpl" %}
+
+    {% relocate css %}
+    .my_div {
+        color: #f00;
+    }
+    {% endrelocate %}
+{% endblock %}
+
