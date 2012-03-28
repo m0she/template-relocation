@@ -41,11 +41,13 @@ class mudeque(object):
     for name, dest in dict(
                 append='last', extend='last', pop='last',
                 appendleft='first', extendleft='first', popleft='first',
-                clear='all', __len__='sum',
-                remove='unimplemented', rotate='unimplemented',
+                __len__='sum', remove='unimplemented', rotate='unimplemented',
             ).iteritems():
         locals()[name] = get_proxy_func(name, dest)
     del name, dest
+
+    def clear(self):
+        self.__init__(cls=self.cls)
 
     def __iter__(self):
         return chain(*self.deques)

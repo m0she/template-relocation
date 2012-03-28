@@ -1,13 +1,14 @@
-import hashlib, logging
+import copy, hashlib, logging
 from bunch import Bunch
 
 from django.conf import settings
+from django.core.cache import DEFAULT_CACHE_ALIAS
 from django.core.urlresolvers import reverse
 
 from .cache import cached_data
 from .utils import buf_to_unicode, smart_import
 
-CACHE_NAME='relocations'
+CACHE_NAME=getattr(settings, 'RELOCATION_CACHE', DEFAULT_CACHE_ALIAS)
 def relocation_cache_get_or_set(key_prefix, data, func):
     with cached_data('%s_%s' % (key_prefix, hashlib.md5(data).hexdigest()), backend=CACHE_NAME) as ctx:
         if not ctx.found:
@@ -21,7 +22,7 @@ def patch_cached_response(request, response):
 
 def external_http_reference(destination_format, reverse_view):
     return lambda template_name, section_name, section_data: (
-        destination_format % reverse(reverse_view, args=(template_name, section_data)))
+        destination_format % reverse(reverse_view, kwargs=dict(template_name=template_name, section=section_name)))
 
 EXTERNIFY_VIEW = getattr(settings, 'RELOCATION_EXTERNIFY_VIEW', None)
 EXTERNIFY_SECTION_RULES = Bunch(
@@ -41,14 +42,14 @@ EXTERNIFY_SECTION_RULES = Bunch(
     ),
 )
 
-def externify(template_name, main, sections, rules=EXTERNIFY_SECTION_RULES, prefix='externified_'):
-    for section_name, ruledata in rules.items:
+def externify(template_name, main, sections, rules=EXTERNIFY_SECTION_RULES):
+    for section_name, ruledata in rules.items():
         if section_name not in sections:
             continue
-        new_section_name = prefix+section_name
-        sections[new_section_name] = sections[section_name].copy()
+        new_section = copy.deepcopy(sections[section_name])
         sections[section_name].clear()
-        sections[section_name].append(ruledata.reference(template_name, section_name, sections[new_section_name]))
+        sections[section_name].append(ruledata.reference(template_name, section_name, new_section))
+        sections[section_name] = new_section
 
 scss_compiler = None
 def get_scss_compiler():

@@ -12,6 +12,7 @@ def load_settings_function(settings_name, default_function=None):
     return load_function(func)
 
 def default_load_template(template_name):
+    # don't invoke loader unless necessary
     from django.template.loader import get_template
     return get_template(template_name)
 
@@ -29,5 +30,5 @@ def render_to_string(template_name, context):
 
 def externified_view(request, template_name, section):
     main, sections = perform_relocation(template_name, load_template(template_name).render(get_context(request, template_name)))
-    return externified_response(template_name, section, sections[section])
+    return externified_response(template_name, section, buf_to_unicode(sections[section]))
 
