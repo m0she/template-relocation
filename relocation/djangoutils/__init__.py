@@ -3,6 +3,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpResponse
 from django.template.base import add_to_builtins, RequestContext
 
+from ..processors import EXTERNIFY_SECTION_RULES
 from ..utils import buf_to_unicode, load_function
 from relocation import perform_relocation
 
@@ -22,7 +23,8 @@ def default_get_context(request, template_name):
 
 get_context = load_settings_function('RELOCATION_GET_CONTEXT', default_get_context)
 load_template = load_settings_function('RELOCATION_LOAD_TEMPLATE', default_load_template)
-externified_response = load_settings_function('RELOCATION_EXTERNIFIED_RESPONSE', lambda template_name, section, data: HttpResponse(data))
+externified_response = load_settings_function('RELOCATION_EXTERNIFIED_RESPONSE',
+    lambda template_name, section, data: HttpResponse(data, mimetype=EXTERNIFY_SECTION_RULES[section].mimetype))
 
 def render_to_string(template_name, context):
     main, sections = perform_relocation(template_name, load_template(template_name).render(context))

@@ -29,7 +29,7 @@ def external_http_reference(destination_format, reverse_view):
         destination_format % reverse(reverse_view, kwargs=dict(template_name=template_name, section=section_name)))
 
 EXTERNIFY_VIEW = getattr(settings, 'RELOCATION_EXTERNIFY_VIEW', 'externified_view')
-EXTERNIFY_SECTION_RULES = Bunch(
+EXTERNIFY_SECTION_RULES = getattr(settings, 'RELOCATION_EXTERNIFY_RULES', None) or Bunch(
     javascript = Bunch(
         reference = external_http_reference_with_data_hash(
             destination_format = '<script type="text/javascript" src="%s"></script>',
