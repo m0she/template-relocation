@@ -15,6 +15,15 @@ def relocation_cache_get_or_set(key_prefix, data, func):
             ctx.response = func(data)
     return ctx.response
 
+def external_http_reference_with_data_hash(destination_format, reverse_view):
+    def reference_builder(template_name, section_name, section_data):
+        return destination_format % reverse(reverse_view, kwargs=dict(
+            template_name=template_name,
+            section=section_name,
+            data_hash=hashlib.md5(buf_to_unicode(section_data)).hexdigest(),
+        ))
+    return reference_builder
+
 def external_http_reference(destination_format, reverse_view):
     return lambda template_name, section_name, section_data: (
         destination_format % reverse(reverse_view, kwargs=dict(template_name=template_name, section=section_name)))
@@ -22,14 +31,14 @@ def external_http_reference(destination_format, reverse_view):
 EXTERNIFY_VIEW = getattr(settings, 'RELOCATION_EXTERNIFY_VIEW', 'externified_view')
 EXTERNIFY_SECTION_RULES = Bunch(
     javascript = Bunch(
-        reference = external_http_reference(
+        reference = external_http_reference_with_data_hash(
             destination_format = '<script type="text/javascript" src="%s"></script>',
             reverse_view = EXTERNIFY_VIEW,
         ),
         mimetype = 'application/javascript',
     ),
     css = Bunch(
-        reference = external_http_reference(
+        reference = external_http_reference_with_data_hash(
             destination_format = '<link rel="stylesheet" type="text/css" href="%s"/>',
             reverse_view = EXTERNIFY_VIEW,
         ),

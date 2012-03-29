@@ -28,7 +28,8 @@ def render_to_string(template_name, context):
     main, sections = perform_relocation(template_name, load_template(template_name).render(context))
     return buf_to_unicode(main)
 
-def externified_view(request, template_name, section):
+def externified_view(request, template_name, section, data_hash=""):
+    ## TODO: verify result with data_hash - less important since cache key is already effected by url
     main, sections = perform_relocation(template_name, load_template(template_name).render(get_context(request, template_name)))
     return externified_response(template_name, section, buf_to_unicode(sections[section]))
 

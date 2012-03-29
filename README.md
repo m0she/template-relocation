@@ -67,7 +67,7 @@ To use you'll need to add something along the following lines to urls.py (see [C
     from relocation.djangoutils import externified_view
 
     urlpatterns = patterns('',
-        url(r'^relocation/(?P<section>[^/]+)/(?P<template_name>.*)/$', 
+        url(r'^relocation/(?P<section>[^/]+)/(?P<template_name>.*)/(?P<data_hash>.*)$',
             cache_page(externified_view, 30*24*60*60), name='externified_view'),
     )
 
